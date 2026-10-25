@@ -8,17 +8,18 @@ on:
         required: true
         default: 'My Web App'
       web_url:
-        description: 'Website or HTML file'
+        description: 'Live Website URL (Leave blank if using local files)'
         required: false
+        default: 'https://example.com'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Template
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Setup Java JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -27,13 +28,21 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build Release APK
+      - name: Clone Base WebView Template
         run: |
+          git clone https://github.com/shantanai/android-webview-template.git template
+          cd template
+          # Rename the App in strings.xml
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">${{ github.event.inputs.app_name }}<\/string>/g' app/src/main/res/values/strings.xml
+          # Set the Web URL
+          if [ -n "${{ github.event.inputs.web_url }}" ]; then
+            sed -i 's|https://example.com|${{ github.event.inputs.web_url }}|g' app/src/main/java/*/*/*/MainActivity.* || true
+          fi
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
-      - name: Upload Finished APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: app/build/outputs/apk/release/*.apk
+          name: ${{ github.event.inputs.app_name }}-Debug-APK
+          path: template/app/build/outputs/apk/debug/*.apk
