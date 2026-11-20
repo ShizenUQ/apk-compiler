@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Unpack project
-        run: unzip -q bulwark-v4.4.zip -d src
+        run: unzip -q bulwark-v4.5.zip -d src
 
       - uses: actions/setup-java@v4
         with:
